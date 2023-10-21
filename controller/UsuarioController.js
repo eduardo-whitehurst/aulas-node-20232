@@ -6,16 +6,20 @@ module.exports.listarUsuarios = async function (req, res) {
   res.status(200).send(usuarios);
 };
 
+//resposta da atividade de BDII
 module.exports.buscarPorEmail = async function(req,res){
-  console.log(await client.ping());
-  const usuario = await Usuario.findByPk(req.params.email);
-
-  if(usuario){
-    res.status(200).send(usuario);
-  }else{
-    res.status(404).send('Usuário não encontrado');
+  const {email} = req.params;
+  const cache = await client.get(email);
+  console.log(cache);
+  if(cache){
+    return res.status(200).send(cache);
   }
-
+  const user = await Usuario.findByPk(email);
+  if (!user) {
+    return res.status(404).send('usuario nao encontrado')
+  }
+  await client.set(email, JSON.stringify(user.dataValues));
+  return res.send(user.dataValues);
 };
 
 module.exports.salvarUsuario = async function (req, res){
